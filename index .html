@@ -560,6 +560,9 @@ function exportDrawingReportPDF(){
  let preview='';try{preview=cv.toDataURL('image/png')}catch(e){}
  const w=window.open('','_blank');if(!w){tip('PDF রিপোর্ট খুলতে পপ-আপ অনুমতি দিন।');return}
  w.document.open();w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAD Drawing Measurement Report</title><style>body{font-family:"Noto Sans Bengali","Nirmala UI",sans-serif;color:#172536;margin:22px;line-height:1.5}h1{font-size:21px;margin:0}h2{font-size:16px;margin:4px 0 14px;color:#345}h3{font-size:15px;border-bottom:1px solid #ccd6df;padding-bottom:5px;margin:16px 0 5px}.meta{color:#536579;font-size:12px}.sum{font-weight:700;background:#eef5fb;padding:8px;border-radius:6px}section{break-inside:avoid;margin:15px 0 20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #cbd5df;padding:5px;text-align:left}th{background:#edf2f7}.preview{max-width:100%;max-height:420px;object-fit:contain;border:1px solid #ccd6df;margin:10px 0}.toolbar{position:sticky;top:0;background:white;padding:8px 0;border-bottom:1px solid #ddd}.toolbar button{padding:9px 14px;background:#1769aa;color:white;border:0;border-radius:6px}@media print{.toolbar{display:none}body{margin:12mm}}</style></head><body><div class="toolbar"><button onclick="window.print()">প্রিন্ট / Save as PDF</button></div><h1>CAD ড্রয়িং পরিমাপ রিপোর্ট</h1><h2>লাইন, পলিলাইন ও এরিয়া / অটো-ট্রেস হিসাব</h2><div class="meta">তারিখ: ${new Date().toLocaleString('bn-IN')} • ব্যবহৃত দৈর্ঘ্যের একক: ${NM[u]} • মোট আঁকা অবজেক্ট: ${rows.length}</div>${preview?`<h3>ড্রয়িং প্রিভিউ</h3><img class="preview" src="${preview}">`:''}${rows.join('')}<p class="meta">নোট: পরিমাপ বর্তমান ড্রয়িং কোঅর্ডিনেট ও নির্বাচিত এককের ভিত্তিতে। রাষ্টার/স্ক্যান করা ম্যাপের স্কেল বা জিও-রেফারেন্স সঠিকভাবে ক্যালিব্রেট না থাকলে ফলও সেই অনুপাতে ভুল হতে পারে।</p><script>setTimeout(()=>window.print(),500)<\/script>
+
+
+
 </body></html>`);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){}},500);
 }
 $('bpPdfReport').addEventListener('click',exportDrawingReportPDF);
@@ -1973,10 +1976,10 @@ function onPos(p){const c=p.coords,cur={lat:c.latitude,lon:c.longitude};count++;
  if($('gmFollow').checked&&!paused&&moved){const el=Date.now()-lastShownT;if(el>4000)showAt(cur.lat,cur.lon);else if(!window.__gmT)window.__gmT=setTimeout(()=>{window.__gmT=null;if(last&&$('gmFollow').checked&&!paused&&wid!=null)showAt(last.lat,last.lon)},4050-el)}}
 function onErr(e){const m={1:(window.isSecureContext===false?'⛔ ফাইলটি https ঠিকানায় খোলা হয়নি, তাই Chrome অনুমতি চাইছে না — GitHub Pages-এর https লিংকে খুলুন। ':'')+'লোকেশনের অনুমতি দেওয়া হয়নি — ব্রাউজার/ফোনের সেটিংসে এই সাইটের জন্য Location \"Allow\" করুন।',2:'অবস্থান পাওয়া যাচ্ছে না — GPS/লোকেশন সেবা চালু করে খোলা জায়গায় চেষ্টা করুন।',3:'অবস্থান পেতে বেশি সময় লাগছে — আবার চেষ্টা করুন।'};
  msg('⚠️ '+(m[e.code]||('লোকেশন ত্রুটি: '+e.message)),false);if(e.code===1)stop(true)}
-function start(){if(!navigator.geolocation){msg('⚠️ এই ব্রাউজারে লোকেশন সুবিধা নেই।',false);return}
- if(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname)){msg('⚠️ লাইভ লোকেশনের জন্য https লাগবে (GitHub Pages ইত্যাদি) — http-তে ব্রাউজার আটকে দেয়।',false)}
- if(wid!=null)return;count=0;dist=0;prev=null;path=[];msg('অবস্থান খোঁজা হচ্ছে... অনুমতি চাইলে \"Allow\" দিন।',false);
- wid=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:2000,timeout:20000});$('gmLive').textContent='⏹ লাইভ লোকেশন বন্ধ করুন';$('gmLive').classList.add('secondary')}
+function start(){if(!navigator.geolocation){msg('⚠️ এই ব্রাউজারে লোকেশন সুবিধা নেই। Chrome-এ https ঠিকানা দিয়ে খুলুন।',false);return}
+ if(window.isSecureContext===false||location.protocol==='content:'||(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))){msg('⛔ এই ডাউনলোড করা ফাইল/অনিরাপদ ঠিকানায় লাইভ GPS চালু হবে না। GitHub Pages-এর https:// লিংক থেকে খুলুন, তারপর Location অনুমতি দিন।',false);return}
+ if(wid!=null)return;count=0;dist=0;prev=null;path=[];msg('📡 GPS সিগন্যাল খোঁজা হচ্ছে... অনুমতি চাইলে “Allow” দিন; প্রথম Fix পেতে কিছুক্ষণ লাগতে পারে।',false);
+ wid=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:1000,timeout:25000});$('gmLive').textContent='⏹ লাইভ লোকেশন বন্ধ করুন';$('gmLive').classList.add('secondary')}
 function stop(quiet){if(wid!=null){navigator.geolocation.clearWatch(wid);wid=null}$('gmLive').textContent='📍 লাইভ লোকেশন চালু করুন';$('gmLive').classList.remove('secondary');if(!quiet)msg('লাইভ লোকেশন বন্ধ করা হয়েছে।',false);else $('gmDot').classList.remove('on')}
 $('gmLive').onclick=()=>{wid==null?start():stop()};
 function setFab(){const f=$('gmRecenter');f.classList.toggle('alert',paused);f.title=paused?'ম্যাপ সরে গেছে — চাপলে আপনার অবস্থানে ফিরবেন':'আমার অবস্থানে ফিরুন';f.querySelector('small').textContent=paused?'ফিরে আসুন':'আমার অবস্থান'}
@@ -2320,7 +2323,7 @@ function onPos(p){const c=p.coords,cur={lat:c.latitude,lon:c.longitude};cnt++;bo
  if(prev){const d=hav(prev,cur);if(d>Math.max(3,(c.accuracy||0)/2))dist+=d}if(!prev||hav(prev,cur)>Math.max(3,(c.accuracy||0)/2))prev=cur;
  last={lat:cur.lat,lon:cur.lon,acc:c.accuracy,spd:c.speed,hdg:c.heading,t:p.timestamp};
  const m=toXY(cur.lat,cur.lon),tl=trail[trail.length-1];if(!tl||Math.hypot(m.x-tl.x,m.y-tl.y)>=Math.max(1,(c.accuracy||0)*.3)){trail.push(m);if(trail.length>5000)trail.shift()}
- if(follow){cx=m.x;cy=m.y}
+ if(follow||cnt===1){cx=m.x;cy=m.y}
  $('wpLat').textContent=fx(cur.lat,6);$('wpLon').textContent=fx(cur.lon,6);$('wpAcc').textContent=c.accuracy!=null?'± '+fx(c.accuracy,1)+' মিটার':'—';
  $('wpSpd').textContent=c.speed!=null&&!isNaN(c.speed)?fx(c.speed*3.6,1)+' কিমি/ঘণ্টা':'স্থির / অজানা';$('wpHdg').textContent=dirName(c.heading);
  $('wpXY').textContent=fl(m.x)+', '+fl(m.y);$('wpDist').textContent=dist<1000?fx(dist,0)+' মিটার':fx(dist/1000,2)+' কিমি';$('wpCnt').textContent=cnt+' বার';
@@ -2331,7 +2334,7 @@ function onErr(e){const m={1:(window.isSecureContext===false?'⛔ এই ফা�
  boardMsg=m[e.code]||('লোকেশন ত্রুটি: '+e.message);msg('⚠️ '+boardMsg.replace(/\n/g,' '));if(e.code===1)stop(true);else{$('wpBig').style.display='flex'}draw()}
 function begin(hi){wid=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:hi,maximumAge:hi?1000:30000,timeout:hi?15000:30000});setFab()}
 function start(){if(!navigator.geolocation){boardMsg='এই ব্রাউজারে লোকেশন সুবিধা নেই।\nChrome/Safari-তে খুলুন।';msg('⚠️ এই ব্রাউজারে লোকেশন সুবিধা নেই।');draw();return}
- if(wid!=null)return;lowAcc=false;
+ if(wid!=null)return;lowAcc=false;follow=true;try{$('wpFollow').checked=true}catch(e){}setFab();
  if(window.isSecureContext===false||location.protocol==='content:'){boardMsg='⛔ এই ফাইলটি নিরাপদ (https) ঠিকানায় খোলা হয়নি।\nসমাধান: GitHub Pages-এর https:// লিংকে খুলুন।';msg('⛔ নিরাপদ (https) ঠিকানা ছাড়া ব্রাউজার লোকেশন দেয় না — GitHub Pages-এর লিংকে খুলুন।');$('wpBig').style.display='flex';draw();return}
  if(!org)boardMsg='📡 অবস্থান খোঁজা হচ্ছে...\nঅনুমতি চাইলে "Allow" দিন।';
  msg('অবস্থান খোঁজা হচ্ছে... অনুমতি চাইলে "Allow" দিন।');$('wpBig').style.display='none';draw();
@@ -2487,4 +2490,113 @@ load();if(org)$('wpBig').style.display='none';renderPts();setFab();
 
 
 <script>document.getElementById("gmToWhite").onclick=function(){document.querySelector(".tabs button[data-tab=whitepos]").click();window.scrollTo({top:0,behavior:"smooth"})};</script>
+
+<script id="cad-touch-edit-v97">
+(function(){
+ const cv=document.getElementById('bpCanvas'); if(!cv)return;
+ const wrap=cv.parentNode, Q=s=>document.querySelector(s);
+ const style=document.createElement('style');
+ style.textContent=`
+ .cad-edit-launch{position:absolute;left:10px;top:10px;z-index:55;display:flex;gap:6px;flex-wrap:wrap}
+ .cad-edit-launch button{border:1px solid #345;background:#173f68;color:#fff;border-radius:9px;padding:8px 11px;font-weight:700;box-shadow:0 2px 6px #0004}
+ .cad-edit-panel{position:absolute;left:10px;top:54px;z-index:56;display:none;max-width:min(94%,440px);max-height:65%;overflow:auto;background:#fff;border:2px solid #345;border-radius:12px;padding:9px;box-shadow:0 4px 16px #0005}
+ .cad-edit-panel.open{display:block}
+ .cad-edit-panel button{margin:3px;padding:9px 11px;border:1px solid #9aabba;border-radius:8px;background:#f5f8fb;color:#172b3e;font-weight:600}
+ .cad-edit-panel button:active{background:#dcecff}
+ .cad-edit-panel p{font-size:12px;color:#526273;margin:5px}
+ .cad-icon-toggle{position:absolute;right:10px;top:10px;z-index:57;border:1px solid #345;background:#173f68;color:white;border-radius:9px;padding:8px 10px;font-weight:700}
+ `;
+ document.head.appendChild(style);
+ const launch=document.createElement('div');launch.className='cad-edit-launch';
+ const edit=document.createElement('button');edit.textContent='✥ লাইন/পলিলাইন এডিট';launch.appendChild(edit);
+ const panel=document.createElement('div');panel.className='cad-edit-panel';
+ panel.innerHTML='<b>AutoCAD ধাঁচে লাইন সম্পাদনা</b><p>প্রথমে বাছাই করুন। লাইনের গায়ে টেনে পুরো লাইন সরান; নীল কোণার গ্রিপ টেনে এক পাশ লম্বা/ছোট করুন; নীল মাঝের গ্রিপ টেনে ওই অংশ সরান।</p>';
+ const actions=[
+  ['☝️ বাছাই/সম্পাদনা','[data-tool="sel"]'],
+  ['〰 পলিলাইন আঁকুন','[data-tool="pl"]'],
+  ['╱ সাধারণ লাইন আঁকুন','[data-tool="ln"]'],
+  ['⊹ মাঝখানে নতুন পয়েন্ট','[data-tool="ins"]'],
+  ['✂ কাটিং / আলাদা সেগমেন্ট','[data-tool="dsel"]'],
+  ['✂ নির্বাচিত পলিলাইন ভেঙে লাইন করুন','#bpExp'],
+  ['⛓ লাইন জোড়া লাগান','#bpJoin'],
+  ['↶ আনডু','#bpUndo'],
+  ['↷ রিডু','#bpRedo'],
+  ['✕ বাছাই বাতিল','__clear']
+ ];
+ actions.forEach(([label,sel])=>{const b=document.createElement('button');b.textContent=label;b.onclick=()=>{
+  panel.classList.remove('open');
+  if(sel==='__clear'){if(window.__deselect)window.__deselect();return}
+  const el=Q(sel);if(el)el.click();
+ };panel.appendChild(b)});
+ const note=document.createElement('p');note.textContent='কাটিং: “বাছুন” চালু করে পলিলাইনের যে বিন্দুতে ভাগ করতে চান সেটি নির্বাচন করুন; “ভেঙে আলাদা লাইন” পুরো পলিলাইনকে পৃথক সেগমেন্টে ভাগ করে।';panel.appendChild(note);
+ edit.onclick=()=>panel.classList.toggle('open');
+ const toggle=document.createElement('button');toggle.className='cad-icon-toggle';toggle.textContent='☰ আইকন লুকান';
+ toggle.onclick=()=>{
+   const bars=wrap.querySelectorAll('.fabm,.fabp,.fabb');
+   const hidden=toggle.dataset.hidden!=='1';
+   bars.forEach(x=>x.style.display=hidden?'none':'');
+   toggle.dataset.hidden=hidden?'1':'0';
+   toggle.textContent=hidden?'☰ আইকন দেখান':'☰ আইকন লুকান';
+   if(hidden)panel.classList.remove('open');
+ };
+ wrap.append(launch,panel,toggle);
+ // Keep the editor panel available on the canvas; tapping a canvas object still uses
+ // the existing CAD selection/grip engine, including vertex and segment grips.
+})();
+</script>
+
+
+<script id="cad-touch-edit-v97">
+(function(){
+ const cv=document.getElementById('bpCanvas'); if(!cv)return;
+ const wrap=cv.parentNode, Q=s=>document.querySelector(s);
+ const style=document.createElement('style');
+ style.textContent=`
+ .cad-edit-launch{position:absolute;left:10px;top:10px;z-index:55;display:flex;gap:6px;flex-wrap:wrap}
+ .cad-edit-launch button{border:1px solid #345;background:#173f68;color:#fff;border-radius:9px;padding:8px 11px;font-weight:700;box-shadow:0 2px 6px #0004}
+ .cad-edit-panel{position:absolute;left:10px;top:54px;z-index:56;display:none;max-width:min(94%,440px);max-height:65%;overflow:auto;background:#fff;border:2px solid #345;border-radius:12px;padding:9px;box-shadow:0 4px 16px #0005}
+ .cad-edit-panel.open{display:block}
+ .cad-edit-panel button{margin:3px;padding:9px 11px;border:1px solid #9aabba;border-radius:8px;background:#f5f8fb;color:#172b3e;font-weight:600}
+ .cad-edit-panel button:active{background:#dcecff}
+ .cad-edit-panel p{font-size:12px;color:#526273;margin:5px}
+ .cad-icon-toggle{position:absolute;right:10px;top:10px;z-index:57;border:1px solid #345;background:#173f68;color:white;border-radius:9px;padding:8px 10px;font-weight:700}
+ `;
+ document.head.appendChild(style);
+ const launch=document.createElement('div');launch.className='cad-edit-launch';
+ const edit=document.createElement('button');edit.textContent='✥ লাইন/পলিলাইন এডিট';launch.appendChild(edit);
+ const panel=document.createElement('div');panel.className='cad-edit-panel';
+ panel.innerHTML='<b>AutoCAD ধাঁচে লাইন সম্পাদনা</b><p>প্রথমে বাছাই করুন। লাইনের গায়ে টেনে পুরো লাইন সরান; নীল কোণার গ্রিপ টেনে এক পাশ লম্বা/ছোট করুন; নীল মাঝের গ্রিপ টেনে ওই অংশ সরান।</p>';
+ const actions=[
+  ['☝️ বাছাই/সম্পাদনা','[data-tool="sel"]'],
+  ['〰 পলিলাইন আঁকুন','[data-tool="pl"]'],
+  ['╱ সাধারণ লাইন আঁকুন','[data-tool="ln"]'],
+  ['⊹ মাঝখানে নতুন পয়েন্ট','[data-tool="ins"]'],
+  ['✂ কাটিং / আলাদা সেগমেন্ট','[data-tool="dsel"]'],
+  ['✂ নির্বাচিত পলিলাইন ভেঙে লাইন করুন','#bpExp'],
+  ['⛓ লাইন জোড়া লাগান','#bpJoin'],
+  ['↶ আনডু','#bpUndo'],
+  ['↷ রিডু','#bpRedo'],
+  ['✕ বাছাই বাতিল','__clear']
+ ];
+ actions.forEach(([label,sel])=>{const b=document.createElement('button');b.textContent=label;b.onclick=()=>{
+  panel.classList.remove('open');
+  if(sel==='__clear'){if(window.__deselect)window.__deselect();return}
+  const el=Q(sel);if(el)el.click();
+ };panel.appendChild(b)});
+ const note=document.createElement('p');note.textContent='কাটিং: “বাছুন” চালু করে পলিলাইনের যে বিন্দুতে ভাগ করতে চান সেটি নির্বাচন করুন; “ভেঙে আলাদা লাইন” পুরো পলিলাইনকে পৃথক সেগমেন্টে ভাগ করে।';panel.appendChild(note);
+ edit.onclick=()=>panel.classList.toggle('open');
+ const toggle=document.createElement('button');toggle.className='cad-icon-toggle';toggle.textContent='☰ আইকন লুকান';
+ toggle.onclick=()=>{
+   const bars=wrap.querySelectorAll('.fabm,.fabp,.fabb');
+   const hidden=toggle.dataset.hidden!=='1';
+   bars.forEach(x=>x.style.display=hidden?'none':'');
+   toggle.dataset.hidden=hidden?'1':'0';
+   toggle.textContent=hidden?'☰ আইকন দেখান':'☰ আইকন লুকান';
+   if(hidden)panel.classList.remove('open');
+ };
+ wrap.append(launch,panel,toggle);
+ // Keep the editor panel available on the canvas; tapping a canvas object still uses
+ // the existing CAD selection/grip engine, including vertex and segment grips.
+})();
+</script>
 </body></html>
