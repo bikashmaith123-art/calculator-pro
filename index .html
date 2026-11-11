@@ -1960,7 +1960,7 @@ function showAt(lat,lon,force){const c=lat.toFixed(6)+','+lon.toFixed(6);lastSho
  if(adv&&gmap){gmap.setCenter({lat,lng:lon});gmap.setZoom(+$('gmZoom').value);return}
  $('gmFrame').src=frameUrl(c)+(force?'&_r='+Date.now():'')}
 function msg(t,on){$('gmStatus').textContent=t;$('gmDot').classList.toggle('on',!!on)}
-function onPos(p){const c=p.coords,cur={lat:c.latitude,lon:c.longitude};count++;if(prev){const d=hav(prev,cur);if(d>Math.max(3,(c.accuracy||0)/2))dist+=d}if(!prev||hav(prev,cur)>Math.max(3,(c.accuracy||0)/2))prev=cur;
+function onPos(p){const c=p.coords,cur={lat:c.latitude,lon:c.longitude};count++;if(prev){const d=hav(prev,cur);if(d>Math.max(1.5,(c.accuracy||0)*.25))dist+=d}if(!prev||hav(prev,cur)>Math.max(1.5,(c.accuracy||0)*.25))prev=cur;
  last={lat:cur.lat,lon:cur.lon,acc:c.accuracy,spd:c.speed,hdg:c.heading,alt:c.altitude,t:p.timestamp};
  $('gmLat').textContent=fx(cur.lat,6);$('gmLon').textContent=fx(cur.lon,6);$('gmAcc').textContent=c.accuracy!=null?'± '+fx(c.accuracy,1)+' মিটার':'—';
  $('gmSpd').textContent=c.speed!=null&&!isNaN(c.speed)?fx(c.speed*3.6,1)+' কিমি/ঘণ্টা':'স্থির / অজানা';$('gmHdg').textContent=dirName(c.heading);$('gmAlt').textContent=c.altitude!=null?fx(c.altitude,1)+' মিটার':'—';
@@ -2332,16 +2332,26 @@ function onPos(p){const c=p.coords,cur={lat:c.latitude,lon:c.longitude};cnt++;bo
 function onErr(e){const m={1:(window.isSecureContext===false?'⛔ এই ফাইলটি নিরাপদ (https) ঠিকানায় খোলা হয়নি, তাই Chrome অনুমতি চাওয়ার বাক্সই দেখায় না।\nসমাধান: GitHub Pages-এর https:// লিংকে খুলুন।':'লোকেশনের অনুমতি দেওয়া হয়নি।\nব্রাউজার/ফোনের সেটিংসে এই সাইটের জন্য\nLocation "Allow" করে পাতা রিলোড করুন।'),2:'অবস্থান পাওয়া যাচ্ছে না।\nফোনের GPS/Location চালু করে\nখোলা জায়গায় আবার চেষ্টা করুন।',3:'অবস্থান পেতে বেশি সময় লাগছে...'};
  if((e.code===2||e.code===3)&&!lowAcc&&wid!=null){lowAcc=true;navigator.geolocation.clearWatch(wid);wid=null;boardMsg='সঠিক GPS পেতে দেরি হচ্ছে —\nসাধারণ (নেটওয়ার্ক) অবস্থান খোঁজা হচ্ছে...';msg('⚠️ GPS ধীর — নেটওয়ার্ক অবস্থান দিয়ে চেষ্টা চলছে...');draw();begin(false);return}
  boardMsg=m[e.code]||('লোকেশন ত্রুটি: '+e.message);msg('⚠️ '+boardMsg.replace(/\n/g,' '));if(e.code===1)stop(true);else{$('wpBig').style.display='flex'}draw()}
-function begin(hi){wid=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:hi,maximumAge:hi?1000:30000,timeout:hi?15000:30000});setFab()}
-function start(){if(!navigator.geolocation){boardMsg='এই ব্রাউজারে লোকেশন সুবিধা নেই।\nChrome/Safari-তে খুলুন।';msg('⚠️ এই ব্রাউজারে লোকেশন সুবিধা নেই।');draw();return}
- if(wid!=null)return;lowAcc=false;follow=true;try{$('wpFollow').checked=true}catch(e){}setFab();
- if(window.isSecureContext===false||location.protocol==='content:'){boardMsg='⛔ এই ফাইলটি নিরাপদ (https) ঠিকানায় খোলা হয়নি।\nসমাধান: GitHub Pages-এর https:// লিংকে খুলুন।';msg('⛔ নিরাপদ (https) ঠিকানা ছাড়া ব্রাউজার লোকেশন দেয় না — GitHub Pages-এর লিংকে খুলুন।');$('wpBig').style.display='flex';draw();return}
- if(!org)boardMsg='📡 অবস্থান খোঁজা হচ্ছে...\nঅনুমতি চাইলে "Allow" দিন।';
- msg('অবস্থান খোঁজা হচ্ছে... অনুমতি চাইলে "Allow" দিন।');$('wpBig').style.display='none';draw();
+function begin(hi){
+ // Continuous watch: this is what updates the marker while the user walks.
+ wid=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:hi,maximumAge:hi?0:5000,timeout:hi?30000:45000});setFab();
+}
+function start(){
+ if(!navigator.geolocation){boardMsg='এই ব্রাউজারে লোকেশন সুবিধা নেই।\nChrome-এ HTTPS ঠিকানা দিয়ে খুলুন।';msg('⚠️ এই ব্রাউজারে লোকেশন সুবিধা নেই।');draw();return}
+ if(wid!=null)return;
+ lowAcc=false;follow=true;try{$('wpFollow').checked=true}catch(e){}setFab();
+ if(window.isSecureContext===false||location.protocol==='content:'||(location.protocol==='http:'&&!/^(localhost|127\.)/.test(location.hostname))){boardMsg='⛔ HTTPS ঠিকানা দরকার।\nGitHub Pages-এর https:// লিংক খুলুন।';msg('⛔ নিরাপদ HTTPS ঠিকানা ছাড়া ব্রাউজার লোকেশন দেয় না।');$('wpBig').style.display='flex';draw();return}
+ if(!org)boardMsg='📡 GPS/নেটওয়ার্ক অবস্থান খোঁজা হচ্ছে...\nঅনুমতি চাইলে Allow দিন।';
+ msg('📡 অবস্থান খোঁজা হচ্ছে — GPS চালু রাখুন, Chrome-এ Location Allow দিন।');$('wpBig').style.display='none';draw();
+ // Ask for an immediate single fix as well as starting the continuous walk tracker.
+ // The one-shot fix helps devices that take a long time to deliver the first watchPosition event.
+ try{navigator.geolocation.getCurrentPosition(p=>{if(wid!=null)onPos(p)},e=>{if(wid!=null&&e.code===1)onErr(e)},{enableHighAccuracy:true,maximumAge:0,timeout:25000})}catch(e){}
  begin(true);$('wpLive').textContent='⏹ লাইভ লোকেশন বন্ধ করুন';$('wpLive').classList.add('secondary');
- clearTimeout(fixTimer);fixTimer=setTimeout(()=>{if(!last&&wid!=null){if(!org)boardMsg='এখনো অবস্থান পাওয়া যায়নি।\nফোনের Location চালু আছে কিনা দেখুন,\nখোলা জায়গায় যান; অনুমতি "Allow" দিন।';msg('⏳ এখনো অবস্থান পাওয়া যায়নি — Location চালু ও অনুমতি "Allow" আছে কিনা দেখুন।');draw()}},12000)}
+ clearTimeout(fixTimer);fixTimer=setTimeout(()=>{if(!last&&wid!=null){boardMsg='এখনো GPS Fix আসেনি।\n১) ট্যাবলেটের Location চালু করুন।\n২) Chrome Site settings-এ Location Allow করুন।\n৩) খোলা আকাশের নিচে ৩০–৬০ সেকেন্ড অপেক্ষা করুন।';msg('⏳ GPS Fix আসেনি — Location/Chrome অনুমতি পরীক্ষা করে খোলা জায়গায় অপেক্ষা করুন।');draw()}},18000)
+}
 function stop(q){clearTimeout(fixTimer);if(wid!=null){navigator.geolocation.clearWatch(wid);wid=null}if(!last&&!org)$('wpBig').style.display='flex';$('wpLive').textContent='📍 লাইভ লোকেশন চালু করুন';$('wpLive').classList.remove('secondary');if(!q)msg('লাইভ লোকেশন বন্ধ করা হয়েছে।');setFab()}
 $('wpLive').onclick=()=>{wid==null?start():stop()};$('wpBig').onclick=start;
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&wid!=null){msg('📡 লাইভ লোকেশন চালু আছে — আবার অবস্থান আপডেটের অপেক্ষায়...');}});
 $('wpReset').onclick=()=>{if((pts.length||trail.length||strokes.length||circles.length||lines.length||org)&&!confirm('সব পয়েন্ট, আঁকা, বৃত্ত ও মূল বিন্দু মুছে নতুন করে শুরু করবেন?'))return;org=null;last=null;boardMsg='';trail=[];pts=[];strokes=[];circles=[];lines=[];curLine=null;sel=null;UN=[];RE=[];cnt=0;dist=0;prev=null;cx=0;cy=0;follow=true;$('wpFollow').checked=true;try{localStorage.removeItem(KEY)}catch(e){}['wpLat','wpLon','wpAcc','wpSpd','wpHdg','wpXY','wpDist','wpCnt'].forEach(i=>$(i).textContent='—');$('wpChip').textContent='📍 অবস্থান এখনো পাওয়া যায়নি';if(wid==null)$('wpBig').style.display='flex';renderPts();setFab();draw();msg('নতুন করে শুরু হয়েছে।')};
 $('wpToGm').onclick=()=>document.querySelector('.tabs button[data-tab=gmap]').click();
 $('wpFab').onclick=recenter;
