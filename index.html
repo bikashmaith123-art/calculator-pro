@@ -128,12 +128,13 @@ input,select,textarea,button{max-width:100%}
 <div class="gmcard" id="gmTouchAlignCard" style="margin:8px 0;border:2px solid #1769aa;background:#f0f7ff">
  <b>🧩 ছবি Google Map-এর সঙ্গে ওভারল্যাপ / অ্যালাইন</b>
  <p class="hint" style="margin:5px 0">দুটি পদ্ধতিই রাখা হয়েছে। একই ছবির A ও B পয়েন্ট বেছে নিয়ে হয় হাতে Google Map-এ একই জায়গায় টাচ করুন, নয়তো A ও B-এর Latitude/Longitude লিখুন।</p>
- <div class="gmrow"><button class="secondary" id="gmAlignModeTouch" type="button">👆 হাতে টাচ পদ্ধতি</button><button class="secondary" id="gmAlignModeCoord" type="button">📍 কোঅর্ডিনেট পদ্ধতি</button></div>
+ <div class="gmrow"><button class="secondary" id="gmAlignModeCoord" type="button">📍 কোঅর্ডিনেট পদ্ধতি</button></div>
  <div id="gmCoordFields" style="display:none;border:1px solid #b7cbe0;border-radius:9px;padding:8px;margin:6px 0;background:#fff">
   <b>ছবির A ও B পয়েন্টের Google Latitude / Longitude</b>
   <div class="gmrow" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"><label>A Latitude<input id="gmOvALat" type="number" step="any" placeholder="যেমন 22.123456"></label><label>A Longitude<input id="gmOvALon" type="number" step="any" placeholder="যেমন 87.123456"></label><label>B Latitude<input id="gmOvBLat" type="number" step="any" placeholder="যেমন 22.124000"></label><label>B Longitude<input id="gmOvBLon" type="number" step="any" placeholder="যেমন 87.124000"></label></div>
   <p class="hint">কোঅর্ডিনেট পদ্ধতিতে প্রথমে ছবিতে A পয়েন্ট, তারপর ছবিতে B পয়েন্ট টাচ করুন।</p>
  </div>
+ <div class="gmrow" style="margin-top:6px"><button class="secondary" id="gmAlignModeTouch" type="button">👆 হাতে টাচ পদ্ধতি</button></div>
  <div class="gmrow"><button class="secondary" id="gmTouchAlignStart">🎯 অ্যালাইন শুরু</button><button class="secondary" id="gmTouchAlignCancel">✕ বাতিল</button><label style="display:flex;align-items:center;gap:5px">ছবির স্বচ্ছতা <input id="gmTouchAlignOpacity" type="range" min="0.1" max="1" step="0.05" value="0.65" style="width:110px"></label><button class="secondary" id="gmTouchAlignClear">🗑 ওভারলে সরান</button></div>
  <div id="gmTouchAlignStatus" class="hint" aria-live="polite">অবস্থা: প্রস্তুত। Google Map-এ টাচ করে পয়েন্ট নেওয়ার জন্য উন্নত Google Map (API Key) চালু থাকতে হবে।</div>
 </div>
