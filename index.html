@@ -88,7 +88,26 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
 <section class="card map-card">
  <div class="map-toolbar"><h2 style="margin:0">লাইভ স্যাটেলাইট ম্যাপ</h2><button id="fullMap" class="secondary">পূর্ণ স্ক্রিন</button></div>
  <div id="map"></div>
- <p class="muted" style="margin:7px 2px 0">Satellite imagery ও স্থাননাম ইন্টারনেট থেকে লোড হয়। নীল মার্কার লাইভ GPS, সবুজ মার্কার Reference Point। স্তর পরিবর্তন করতে ম্যাপের উপরের Layers বোতাম ব্যবহার করুন।</p>
+ <p class="muted" id="mapNotice" style="margin:7px 2px 0">স্যাটেলাইট ছবি ইন্টারনেট থেকে লোড হয়। নীল মার্কার লাইভ GPS, সবুজ মার্কার Reference Point। স্তর পরিবর্তন করতে ম্যাপের Layers বোতাম ব্যবহার করুন।</p>
+</section>
+
+<section class="card">
+ <h2>Coordinate ↔ মিলিমিটার / সেন্টিমিটার ক্যালকুলেটর</h2>
+ <p class="muted">Reference Latitude অনুযায়ী WGS84 উপবৃত্তাকার পৃথিবীর হিসাব। উত্তর/দক্ষিণ ও পূর্ব/পশ্চিম আলাদাভাবে হিসাব হয়।</p>
+ <div class="grid">
+  <div><label class="muted">Reference Latitude (°)</label><input id="calcLat" type="number" step="0.00000001" value="21.9820188"></div>
+  <div><label class="muted">Reference Longitude (°)</label><input id="calcLon" type="number" step="0.00000001" value="87.6618959"></div>
+  <div><label class="muted">উত্তর (+) / দক্ষিণ (−), সেন্টিমিটার</label><input id="northCm" type="number" step="0.1" value="1"></div>
+  <div><label class="muted">পূর্ব (+) / পশ্চিম (−), সেন্টিমিটার</label><input id="eastCm" type="number" step="0.1" value="1"></div>
+ </div>
+ <button id="calcCoord" style="width:100%;margin-top:10px">Coordinate পরিবর্তন হিসাব করুন</button>
+ <div class="grid" style="margin-top:10px">
+  <div class="metric"><label>Δ Latitude (ডিগ্রি)</label><div class="value" id="calcDLat">—</div></div>
+  <div class="metric"><label>Δ Longitude (ডিগ্রি)</label><div class="value" id="calcDLon">—</div></div>
+  <div class="metric"><label>নতুন Latitude</label><div class="value" id="calcNewLat">—</div></div>
+  <div class="metric"><label>নতুন Longitude</label><div class="value" id="calcNewLon">—</div></div>
+ </div>
+ <p class="note" style="margin-top:10px">এটি তাত্ত্বিক coordinate conversion। ফোনের GPS accuracy যদি ৩–৫ মিটার হয়, তাহলে ১ সেন্টিমিটারের coordinate পরিবর্তন স্ক্রিনে হিসাব করা গেলেও ফোন দিয়ে সেটি বাস্তবে নির্ভরযোগ্যভাবে মাপা যাবে না।</p>
 </section>
 
 <section class="card">
@@ -118,11 +137,14 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
  const $=id=>document.getElementById(id);
  let watch=null, latest=null, reference=null, samples=[], saved=[];
  const map=L.map('map').setView([22.5726,88.3639],5);
- const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}); 
- const labels=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,opacity:0.95,attribution:'Labels © Esri'});
+ const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:17,attribution:'Tiles © Esri'});
+ const labels=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:17,opacity:0.95,attribution:'Labels © Esri'});
  const streets=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
+ let satErrors=0, satFallback=false;
+ satellite.on('tileerror',()=>{satErrors++; if(satErrors>=4&&!satFallback){satFallback=true;if(map.hasLayer(satellite))map.removeLayer(satellite);if(map.hasLayer(labels))map.removeLayer(labels);streets.addTo(map);$('mapNotice').textContent='স্যাটেলাইট টাইল সার্ভার এই জুম/এলাকায় ছবি দেয়নি। Street Map স্বয়ংক্রিয়ভাবে দেখানো হয়েছে; Layers থেকে আবার Satellite চেষ্টা করতে পারেন।';}});
+ satellite.on('tileload',()=>{if(!satFallback)$('mapNotice').textContent='স্যাটেলাইট ছবি লোড হচ্ছে/দেখানো হচ্ছে।'});
  satellite.addTo(map); labels.addTo(map);
- L.control.layers({'Satellite':satellite,'রাস্তা/Street':streets},{'স্থাননাম ও সীমানা':labels},{collapsed:true}).addTo(map);
+ L.control.layers({'Satellite (Esri)':satellite,'Street (OpenStreetMap)':streets},{'স্থাননাম ও সীমানা':labels},{collapsed:true}).addTo(map);
  let currentMarker=null, refMarker=null, line=null, trail=[];
  const trailLine=L.polyline(trail,{color:'#1266d5',weight:4}).addTo(map);
  const fmt=(n,d=6)=>Number.isFinite(n)?n.toFixed(d):'—';
@@ -190,6 +212,22 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
  $('json').onclick=()=>{if(!saved.length)return alert('আগে পয়েন্ট সেভ করুন।');download('survey-points.json',JSON.stringify({datum:'WGS84',points:saved},null,2),'application/json')};
  $('clearLog').onclick=()=>{if(confirm('সব সেভ করা পয়েন্ট মুছবেন?')){saved=[];renderLog()}};
  $('window').onchange=()=>{samples=samples.slice(-Number($('window').value))};
+ function coordinateCalc(){
+   const lat=Number($('calcLat').value),lon=Number($('calcLon').value),ncm=Number($('northCm').value),ecm=Number($('eastCm').value);
+   if(![lat,lon,ncm,ecm].every(Number.isFinite)||Math.abs(lat)>90||Math.abs(lon)>180){alert('সঠিক Latitude, Longitude ও দূরত্ব লিখুন।');return}
+   const a=6378137, f=1/298.257223563, e2=f*(2-f), ph=rad(lat), w=Math.sqrt(1-e2*Math.sin(ph)**2);
+   const M=a*(1-e2)/(w*w*w), N=a/w;
+   const mLat=(Math.PI/180)*M, mLon=(Math.PI/180)*N*Math.cos(ph);
+   const dLat=(ncm/100)/mLat, dLon=(ecm/100)/mLon;
+   $('calcDLat').textContent=(dLat>=0?'+':'')+dLat.toFixed(12)+'°';
+   $('calcDLon').textContent=(dLon>=0?'+':'')+dLon.toFixed(12)+'°';
+   $('calcNewLat').textContent=(lat+dLat).toFixed(10)+'°';
+   $('calcNewLon').textContent=(lon+dLon).toFixed(10)+'°';
+ }
+ $('calcCoord').onclick=coordinateCalc;
+ if(latest){$('calcLat').value=latest.lat.toFixed(8);$('calcLon').value=latest.lon.toFixed(8)}
+ $('setRef').addEventListener('click',()=>{if(reference){$('calcLat').value=reference.lat.toFixed(8);$('calcLon').value=reference.lon.toFixed(8);coordinateCalc()}});
+ coordinateCalc();
 })();
 </script>
 </body></html>
