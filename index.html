@@ -18,7 +18,18 @@ button.secondary{background:#e8eef5;color:#17324b}button.green{background:var(--
 button:disabled{opacity:.45}
 h2{font-size:16px;margin:0 0 10px}.muted{color:var(--muted);font-size:12px}.big{font-size:25px;font-weight:800;letter-spacing:.2px}.value{font-weight:750;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{background:#f3f7fa;padding:10px;border-radius:10px;min-width:0}.metric label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.metric .value{font-size:16px}
-#map{height:310px;border-radius:12px;overflow:hidden;background:#dce5eb}
+#map{height:58vh;min-height:390px;border-radius:12px;overflow:hidden;background:#dce5eb}
+.map-card{padding:10px}
+.map-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:0 2px 8px}
+.map-toolbar button{min-height:38px;padding:8px 12px}
+body.map-fullscreen{overflow:hidden}
+body.map-fullscreen header,body.map-fullscreen main>section:not(.map-card),body.map-fullscreen footer{display:none!important}
+body.map-fullscreen main{display:block;padding:0;max-width:none}
+body.map-fullscreen .map-card{position:fixed;inset:0;z-index:9999;border-radius:0;padding:8px;background:#fff}
+body.map-fullscreen #map{height:calc(100dvh - 54px);min-height:0;border-radius:8px}
+body.map-fullscreen .map-toolbar{height:38px}
+.leaflet-container{font:12px system-ui,sans-serif}
+@media(min-width:700px){#map{height:68vh;min-height:500px}}
 .status{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:20px;background:#edf2f7;font-size:12px;font-weight:700}.dot{width:8px;height:8px;border-radius:50%;background:#8998a7}.dot.live{background:#16a36a}
 .note{border-left:4px solid #e39a19;background:#fff8e8;padding:11px;border-radius:8px;font-size:13px;line-height:1.55}
 .good{border-left-color:#16865c;background:#eefaf4}
@@ -74,10 +85,10 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
  <div class="row"><button id="savePoint" class="secondary" disabled>বর্তমান পয়েন্ট সেভ</button><button id="google" class="secondary" disabled>Google Maps-এ খুলুন</button></div>
 </section>
 
-<section class="card">
- <h2>ম্যাপ</h2>
+<section class="card map-card">
+ <div class="map-toolbar"><h2 style="margin:0">লাইভ স্যাটেলাইট ম্যাপ</h2><button id="fullMap" class="secondary">পূর্ণ স্ক্রিন</button></div>
  <div id="map"></div>
- <p class="muted">ম্যাপ টাইল ইন্টারনেট থেকে লোড হয়। নীল মার্কার আপনার বর্তমান GPS অবস্থান; সবুজ মার্কার Reference Point।</p>
+ <p class="muted" style="margin:7px 2px 0">Satellite imagery ও স্থাননাম ইন্টারনেট থেকে লোড হয়। নীল মার্কার লাইভ GPS, সবুজ মার্কার Reference Point। স্তর পরিবর্তন করতে ম্যাপের উপরের Layers বোতাম ব্যবহার করুন।</p>
 </section>
 
 <section class="card">
@@ -100,14 +111,18 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
  <p style="font-size:13px;line-height:1.6;margin:0">ভবিষ্যতে Bluetooth/USB Dual-frequency RTK GNSS Receiver, NTRIP/Base correction এবং Android native GNSS measurement integration যোগ করা যাবে। তখন ভালো খোলা আকাশে RTK FIX অবস্থায় সেন্টিমিটার-স্তরের সার্ভে সম্ভব হতে পারে। এই HTML সংস্করণটি বাহ্যিক RTK ডেটা প্রসেস করে না।</p>
 </section>
 </main>
-<footer>Live Survey GPS Pro • WGS84 • দূরত্বের হিসাব আনুমানিক GPS অবস্থানের উপর নির্ভরশীল</footer>
+<footer>Live Survey GPS Pro • WGS84 • Satellite imagery: Esri • দূরত্ব GPS নির্ভুলতার উপর নির্ভরশীল</footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (()=> {
  const $=id=>document.getElementById(id);
  let watch=null, latest=null, reference=null, samples=[], saved=[];
  const map=L.map('map').setView([22.5726,88.3639],5);
- L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+ const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}); 
+ const labels=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,opacity:0.95,attribution:'Labels © Esri'});
+ const streets=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
+ satellite.addTo(map); labels.addTo(map);
+ L.control.layers({'Satellite':satellite,'রাস্তা/Street':streets},{'স্থাননাম ও সীমানা':labels},{collapsed:true}).addTo(map);
  let currentMarker=null, refMarker=null, line=null, trail=[];
  const trailLine=L.polyline(trail,{color:'#1266d5',weight:4}).addTo(map);
  const fmt=(n,d=6)=>Number.isFinite(n)?n.toFixed(d):'—';
@@ -145,11 +160,12 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
   const max=Number($('filter').value);
   if(Number.isFinite(p.acc)&&p.acc<=max){samples.push(p);const n=Number($('window').value);if(samples.length>n)samples=samples.slice(-n)}
   const mean=avg(samples);
-  if(mean){
-   const spread=samples.length>1?Math.sqrt(samples.reduce((s,x)=>s+(x.lat-mean.lat)**2+(x.lon-mean.lon)**2,0)/samples.length)*111320:NaN;
-   $('samples').textContent=samples.length;$('avgAcc').textContent=Number.isFinite(spread)?spread.toFixed(2)+' m':'—';
-   render({...p,lat:mean.lat,lon:mean.lon});
-  }else{render(p);$('samples').textContent='0';$('avgAcc').textContent='—'}
+  const spread=samples.length>1?Math.sqrt(samples.reduce((s,x)=>s+(x.lat-mean.lat)**2+(x.lon-mean.lon)**2,0)/samples.length)*111320:NaN;
+  $('samples').textContent=samples.length;
+  $('avgAcc').textContent=Number.isFinite(spread)?spread.toFixed(2)+' m':'—';
+  // Show the newest GPS fix immediately; do not average the live marker,
+  // because a moving average visibly trails behind the person.
+  render(p);
   $('statusText').textContent='GPS চালু';$('dot').classList.add('live');
  }
  function onError(e){$('statusText').textContent='GPS সমস্যা: '+e.message;$('dot').classList.remove('live');}
@@ -161,7 +177,10 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
   $('start').disabled=true;$('stop').disabled=false;$('statusText').textContent='GPS খোঁজা হচ্ছে…';
  };
  $('stop').onclick=()=>{if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;$('start').disabled=false;$('stop').disabled=true;$('statusText').textContent='GPS বন্ধ';$('dot').classList.remove('live')};
- $('setRef').onclick=()=>{if(!latest)return;reference={lat:latest.lat,lon:latest.lon,time:Date.now()};if(refMarker)map.removeLayer(refMarker);refMarker=L.circleMarker([reference.lat,reference.lon],{radius:8,color:'#fff',weight:2,fillColor:'#16865c',fillOpacity:1}).addTo(map).bindPopup('Reference Point');$('refInfo').textContent='Reference: '+fmt(reference.lat,8)+', '+fmt(reference.lon,8);updateDisplacement(latest)};
+ $('setRef').onclick=()=>{if(!latest)return;
+  // Use the accepted recent fixes' mean for a steadier reference, when available.
+  const refFix=avg(samples)||latest;
+  reference={lat:refFix.lat,lon:refFix.lon,time:Date.now()};if(refMarker)map.removeLayer(refMarker);refMarker=L.circleMarker([reference.lat,reference.lon],{radius:8,color:'#fff',weight:2,fillColor:'#16865c',fillOpacity:1}).addTo(map).bindPopup('Reference Point');$('refInfo').textContent='Reference: '+fmt(reference.lat,8)+', '+fmt(reference.lon,8);updateDisplacement(latest)};
  $('clearRef').onclick=()=>{reference=null;if(refMarker)map.removeLayer(refMarker);refMarker=null;$('refInfo').textContent='কোনো Reference Point সেট করা হয়নি।';['distance','dir','de','dn'].forEach(id=>$(id).textContent='—')};
  $('savePoint').onclick=()=>{if(!latest)return;saved.push({...latest,id:saved.length+1,referenceDistance:reference?hav(reference,latest):null});renderLog()};
  $('google').onclick=()=>{if(latest)window.open('https://www.google.com/maps/search/?api=1&query='+latest.lat+','+latest.lon,'_blank')};
