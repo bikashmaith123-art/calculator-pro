@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#10243a">
-<title>Live Survey GPS Pro V5</title>
+<title>Live Survey GPS Pro V8</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--bg:#eef3f7;--card:#fff;--ink:#142536;--muted:#617386;--blue:#1266d5;--green:#087e54;--red:#b42318}
@@ -41,7 +41,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
 </style>
 </head>
 <body>
-<header><h1>Live Survey GPS Pro V5</h1><p>Android মোবাইল ও ট্যাবলেটের জন্য প্রাথমিক GPS জরিপ টুল</p></header>
+<header><h1>Live Survey GPS Pro V8</h1><p>Android মোবাইল ও ট্যাবলেটের জন্য প্রাথমিক GPS জরিপ টুল</p></header>
 <main>
 <section class="card">
  <div class="row" style="justify-content:space-between">
@@ -128,6 +128,31 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 14px 22px
  <div class="note" id="mvVerdict" style="margin-top:10px">Reference Lock করলে এখানে বিচার দেখাবে। স্থির পর্যবেক্ষণ করলে threshold আরও নির্ভরযোগ্য হবে।</div>
 </section>
 
+<div class="row" id="tabs" style="margin-bottom:14px"><button id="tabMap" class="green">ম্যাপ</button><button id="tabPlot" class="secondary">সাদা প্লট (ম্যাপ ছাড়া)</button></div>
+<section class="card" id="plotCard" style="display:none">
+ <h2>সাদা প্লট</h2>
+ <canvas id="pc" style="width:100%;height:62vh;min-height:420px;background:#fff;border:1px solid #cbd5df;border-radius:12px;touch-action:none;display:block"></canvas>
+ <p class="muted" id="ptInfo" style="margin:8px 0">GPS চালু করে "GPS পয়েন্ট নিন" চাপুন। প্রথম পয়েন্ট (0,0) হবে। এক আঙুলে সরান, দুই আঙুলে জুম করুন।</p>
+ <div class="row"><select id="avgN"><option value="1">১ রিডিং</option><option value="5" selected>৫ রিডিংয়ের গড়</option><option value="10">১০ রিডিংয়ের গড়</option><option value="20">২০ রিডিংয়ের গড়</option></select><button id="ptTake" class="green">GPS পয়েন্ট নিন</button></div>
+ <div class="row" style="margin-top:8px"><button id="zIn" class="secondary">＋</button><button id="zOut" class="secondary">－</button><button id="ptFit" class="secondary">ফিট</button><button id="ptUndo" class="secondary">শেষ পয়েন্ট মুছুন</button></div>
+ <h3 style="margin:16px 0 8px;font-size:15px">বৃত্তের ছেদ থেকে নতুন পয়েন্ট</h3>
+ <div class="row"><select id="selA"></select><input id="rA" type="number" step="any" inputmode="decimal" placeholder="A থেকে দূরত্ব (m)"><button id="liveA" class="secondary" style="flex:none">লাইভ</button></div>
+ <div class="row" style="margin-top:8px"><select id="selB"></select><input id="rB" type="number" step="any" inputmode="decimal" placeholder="B থেকে দূরত্ব (m)"><button id="liveB" class="secondary" style="flex:none">লাইভ</button></div>
+ <div class="row" style="margin-top:8px"><button id="solL">A→B এর বাম ছেদ যোগ</button><button id="solR">ডান ছেদ যোগ</button></div>
+ <h3 style="margin:16px 0 8px;font-size:15px">নেভিগেশন: পয়েন্টে হেঁটে পৌঁছান</h3>
+ <div class="row"><select id="stkSel"></select><select id="stkTol"><option value="0.05">±৫ cm</option><option value="0.1">±১০ cm</option><option value="0.25">±২৫ cm</option><option value="0.5" selected>±৫০ cm</option><option value="1">±১ m</option><option value="3">±৩ m</option></select></div>
+ <button id="stkBtn" class="green" style="width:100%;margin-top:8px">পথ দেখান শুরু</button>
+ <div id="stkBox" style="display:none;margin-top:8px;padding:12px;border-radius:12px;background:#eef4fb;text-align:center"></div>
+ <h3 style="margin:16px 0 8px;font-size:15px">জমির ক্ষেত্রফল (বহুভুজ)</h3>
+ <div class="row"><button id="polyAdd" class="secondary">A পয়েন্ট যোগ করুন</button><button id="polyAll" class="secondary">সব পয়েন্ট ক্রমে</button></div>
+ <div class="row" style="margin-top:8px"><button id="polyUndo" class="secondary">শেষ পয়েন্ট বাদ</button><button id="polyClr" class="secondary">বহুভুজ মুছুন</button></div>
+ <div class="row" style="margin-top:8px"><input id="sqK" type="number" value="720" inputmode="decimal" title="১ কাঠা = কত বর্গফুট"><input id="kB" type="number" value="20" inputmode="decimal" title="১ বিঘা = কত কাঠা"></div>
+ <p class="muted" style="margin:4px 0">উপরে: ১ কাঠা = কত বর্গফুট (720), ১ বিঘা = কত কাঠা (20)। এলাকাভেদে ভিন্ন, নিজের এলাকার মান বসান।</p>
+ <div id="polyOut" class="note" style="margin-top:6px">পয়েন্টগুলো সীমানার ক্রমে (ঘুরে ঘুরে) যোগ করুন।</div>
+ <div class="row" style="margin-top:8px"><button id="kmlB" class="secondary">KML (Google Earth)</button><button id="gjB" class="secondary">GeoJSON</button></div>
+ <div class="row" style="margin-top:8px"><button id="lineAB" class="secondary">A–B লাইন আঁকুন</button><button id="png" class="secondary">PNG</button><button id="csvP" class="secondary">CSV</button><button id="clrP" class="red">সব মুছুন</button></div>
+ <div id="ptList" style="margin-top:10px;font-size:13px;overflow-x:auto"></div>
+</section>
 <section class="card map-card">
  <div class="map-toolbar"><h2 style="margin:0">লাইভ ম্যাপ <span id="zv" class="muted"></span></h2><label>মার্কার<input id="mkSize" type="range" min="1" max="12" value="3"></label><button id="fullMap" class="secondary">পূর্ণ স্ক্রিন</button></div>
  <div id="map"></div>
@@ -391,6 +416,145 @@ $('rawCsv').onclick=()=>{
  const a=document.createElement('a'),u=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));
  a.href=u;a.download='raw-fixes.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
 };
+})();
+</script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),rad=x=>x*Math.PI/180;
+const mpd=lat=>{const e2=0.0066943799901413165,s=Math.sin(rad(lat)),w=Math.sqrt(1-e2*s*s);return{n:Math.PI/180*6378137*(1-e2)/(w*w*w),e:Math.PI/180*6378137/w*Math.cos(rad(lat))}};
+const mean=a=>({lat:a.reduce((s,x)=>s+x.lat,0)/a.length,lon:a.reduce((s,x)=>s+x.lon,0)/a.length});
+let recent=[],P=[],L=[],poly=[],org=null,view={s:20,x:0,y:0},cur=null;
+try{const d=JSON.parse(localStorage.getItem('plotV6'));if(d){P=d.P||[];L=d.L||[];org=d.org||null;poly=d.poly||[]}}catch(e){}
+const save=()=>{try{localStorage.setItem('plotV6',JSON.stringify({P,L,org,poly}))}catch(e){}};
+const old=window.GPSHook;window.GPSHook=p=>{old&&old(p);recent.push(p);if(recent.length>60)recent.shift();live()};
+const cv=$('pc'),cx=cv.getContext('2d');
+const X=e=>view.x+e*view.s,Y=n=>view.y-n*view.s,f=(v,d=2)=>v.toFixed(d);
+const nice=m=>{const k=10**Math.floor(Math.log10(m)),r=m/k;return(r<=1?1:r<=2?2:r<=5?5:10)*k};
+function size(){const d=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w)return false;cv.width=w*d;cv.height=h*d;cx.setTransform(d,0,0,d,0,0);return true}
+function fit(){const w=cv.clientWidth,h=cv.clientHeight;if(!P.length){view={s:20,x:w/2,y:h/2};return}
+ const es=P.map(p=>p.e),ns=P.map(p=>p.n),a=Math.min(...es),b=Math.max(...es),c=Math.min(...ns),d=Math.max(...ns),sp=Math.max(b-a,d-c,2),s=Math.min(w,h)*0.65/sp;
+ view={s,x:w/2-(a+b)/2*s,y:h/2+(c+d)/2*s}}
+const A=()=>P[$('selA').value],B=()=>P[$('selB').value];
+function inter(a,b,ra,rb){const dx=b.e-a.e,dy=b.n-a.n,d=Math.hypot(dx,dy);if(d<1e-9||d>ra+rb||d<Math.abs(ra-rb))return null;
+ const x=(ra*ra-rb*rb+d*d)/(2*d),h=Math.sqrt(Math.max(0,ra*ra-x*x)),ux=dx/d,uy=dy/d,mx=a.e+ux*x,my=a.n+uy*x;
+ return{L:{e:mx-uy*h,n:my+ux*h},R:{e:mx+uy*h,n:my-ux*h}}}
+const sol=()=>{const a=A(),b=B(),ra=+$('rA').value,rb=+$('rB').value;return a&&b&&a!==b&&ra>0&&rb>0?inter(a,b,ra,rb):null};
+function draw(){
+ if(!cv.clientWidth)return;const w=cv.clientWidth,h=cv.clientHeight;
+ cx.fillStyle='#fff';cx.fillRect(0,0,w,h);
+ const st=nice(55/view.s),e0=-view.x/view.s,e1=(w-view.x)/view.s,n0=(view.y-h)/view.s,n1=view.y/view.s;
+ cx.font='10px sans-serif';cx.lineWidth=1;
+ for(let e=Math.ceil(e0/st)*st;e<=e1;e+=st){cx.strokeStyle=Math.abs(e)<1e-9?'#9aa8b8':'#edf0f4';cx.beginPath();cx.moveTo(X(e),0);cx.lineTo(X(e),h);cx.stroke();cx.fillStyle='#8a97a6';cx.fillText(f(e,st<1?1:0),X(e)+2,h-3)}
+ for(let n=Math.ceil(n0/st)*st;n<=n1;n+=st){cx.strokeStyle=Math.abs(n)<1e-9?'#9aa8b8':'#edf0f4';cx.beginPath();cx.moveTo(0,Y(n));cx.lineTo(w,Y(n));cx.stroke();cx.fillStyle='#8a97a6';cx.fillText(f(n,st<1?1:0),2,Y(n)-2)}
+ cx.font='12px sans-serif';
+ L.forEach(([i,j])=>{const a=P[i],b=P[j];if(!a||!b)return;cx.strokeStyle='#17324b';cx.lineWidth=1.5;cx.beginPath();cx.moveTo(X(a.e),Y(a.n));cx.lineTo(X(b.e),Y(b.n));cx.stroke();
+  cx.fillStyle='#b42318';cx.fillText(f(Math.hypot(a.e-b.e,a.n-b.n))+' m',(X(a.e)+X(b.e))/2+4,(Y(a.n)+Y(b.n))/2-4)});
+ if(poly.length>1){cx.beginPath();poly.forEach((i,k)=>{const q=P[i];k?cx.lineTo(X(q.e),Y(q.n)):cx.moveTo(X(q.e),Y(q.n))});if(poly.length>2)cx.closePath();cx.fillStyle='rgba(18,102,213,.10)';cx.fill();cx.strokeStyle='#1266d5';cx.lineWidth=2;cx.stroke();
+  const n=poly.length,sides=n>2?n:1;cx.fillStyle='#1266d5';cx.font='12px sans-serif';
+  for(let k=0;k<sides;k++){const a=P[poly[k]],b=P[poly[(k+1)%n]];cx.fillText(f(Math.hypot(a.e-b.e,a.n-b.n))+' m',(X(a.e)+X(b.e))/2-14,(Y(a.n)+Y(b.n))/2+14)}}
+ const a=A(),b=B();
+ [[a,+$('rA').value],[b,+$('rB').value]].forEach(([p,r])=>{if(p&&r>0){cx.strokeStyle='#e07b00';cx.lineWidth=1;cx.setLineDash([6,4]);cx.beginPath();cx.arc(X(p.e),Y(p.n),r*view.s,0,7);cx.stroke();cx.setLineDash([])}});
+ const s=sol();if(s){[['বাম',s.L],['ডান',s.R]].forEach(([t,q])=>{cx.strokeStyle='#e07b00';cx.lineWidth=2;cx.beginPath();cx.arc(X(q.e),Y(q.n),6,0,7);cx.stroke();cx.fillStyle='#e07b00';cx.fillText(t,X(q.e)+8,Y(q.n)-6)})}
+ P.forEach(p=>{cx.fillStyle=p.t==='gps'?'#1266d5':'#16865c';cx.beginPath();cx.arc(X(p.e),Y(p.n),4,0,7);cx.fill();cx.fillStyle='#111';cx.font='bold 12px sans-serif';cx.fillText(p.name,X(p.e)+7,Y(p.n)-6)});
+ if(tg){cx.strokeStyle=arrived?'#16865c':'#d92d20';cx.lineWidth=2;cx.beginPath();cx.arc(X(tg.e),Y(tg.n),Math.max(7,tol*view.s),0,7);cx.stroke();if(cur){cx.setLineDash([4,4]);cx.beginPath();cx.moveTo(X(cur.e),Y(cur.n));cx.lineTo(X(tg.e),Y(tg.n));cx.stroke();cx.setLineDash([])}}
+ if(cur){cx.strokeStyle='#d92d20';cx.lineWidth=1.5;const x=X(cur.e),y=Y(cur.n);cx.beginPath();cx.arc(x,y,6,0,7);cx.moveTo(x-10,y);cx.lineTo(x+10,y);cx.moveTo(x,y-10);cx.lineTo(x,y+10);cx.stroke()}
+ cx.strokeStyle='#111';cx.lineWidth=3;cx.beginPath();cx.moveTo(12,h-22);cx.lineTo(12+st*view.s,h-22);cx.stroke();cx.fillStyle='#111';cx.font='11px sans-serif';cx.fillText(st+' m',12,h-28);
+ cx.font='bold 13px sans-serif';cx.fillText('↑ উ',w-34,20);
+}
+function lists(){setTimeout(polyCalc,0);
+ ['selA','selB'].forEach((id,k)=>{const el=$(id),v=el.value;el.innerHTML=P.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');el.value=v!==''&&P[v]?v:(k?P.length-1:Math.max(0,P.length-2))});
+ {const el=$('stkSel'),v=el.value;el.innerHTML=P.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');el.value=v!==''&&P[v]?v:P.length-1}
+ $('ptList').innerHTML=P.length?'<table style="width:100%"><tr><th>নাম</th><th>E (m)</th><th>N (m)</th><th>Lat</th><th>Lon</th></tr>'+P.map(p=>`<tr><td>${p.name}</td><td>${f(p.e)}</td><td>${f(p.n)}</td><td>${p.lat.toFixed(8)}</td><td>${p.lon.toFixed(8)}</td></tr>`).join('')+'</table>':'';
+}
+function live(){
+ if(!org||!recent.length)return;const m=mean(recent.slice(-5)),q=mpd(org.lat);cur={e:(m.lon-org.lon)*q.e,n:(m.lat-org.lat)*q.n};
+ const a=A(),b=B();let t='এখনকার অবস্থান';
+ if(a)t+=' → '+a.name+': '+f(Math.hypot(cur.e-a.e,cur.n-a.n))+' m';
+ if(b&&b!==a)t+=' | → '+b.name+': '+f(Math.hypot(cur.e-b.e,cur.n-b.n))+' m';
+ $('ptInfo').textContent=t;draw();stake();
+}
+function add(p){P.push(p);save();lists();if(P.length<=2)fit();draw()}
+$('ptTake').onclick=()=>{
+ const r=recent.slice(-Number($('avgN').value));if(!r.length)return alert('আগে লাইভ GPS চালু করুন।');
+ const m=mean(r);if(!org)org={lat:m.lat,lon:m.lon};const q=mpd(org.lat);
+ add({name:'P'+(P.length+1),t:'gps',lat:m.lat,lon:m.lon,e:(m.lon-org.lon)*q.e,n:(m.lat-org.lat)*q.n});
+};
+function addSol(side){const s=sol();if(!s)return alert('বৃত্ত দুটি ছেদ করছে না বা A/B/দূরত্ব ঠিক নেই।');
+ const q=mpd(org.lat),c=s[side];add({name:'C'+(P.length+1),t:'calc',e:c.e,n:c.n,lat:org.lat+c.n/q.n,lon:org.lon+c.e/q.e});$('rA').value='';$('rB').value='';draw()}
+$('solL').onclick=()=>addSol('L');$('solR').onclick=()=>addSol('R');
+$('liveA').onclick=()=>{if(cur&&A())$('rA').value=Math.hypot(cur.e-A().e,cur.n-A().n).toFixed(3);draw()};
+$('liveB').onclick=()=>{if(cur&&B())$('rB').value=Math.hypot(cur.e-B().e,cur.n-B().n).toFixed(3);draw()};
+['rA','rB','selA','selB'].forEach(i=>$(i).oninput=()=>{live();draw()});
+$('lineAB').onclick=()=>{const i=+$('selA').value,j=+$('selB').value;if(i===j||!P[i]||!P[j])return;if(!L.some(l=>(l[0]===i&&l[1]===j)||(l[0]===j&&l[1]===i)))L.push([i,j]);save();draw()};
+$('ptUndo').onclick=()=>{if(!P.length)return;const i=P.length-1;P.pop();L=L.filter(l=>l[0]!==i&&l[1]!==i);poly=poly.filter(x=>x!==i);if(!P.length)org=null;save();lists();draw()};
+$('clrP').onclick=()=>{if(confirm('প্লটের সব পয়েন্ট মুছবেন?')){P=[];L=[];poly=[];org=null;cur=null;save();lists();fit();draw()}};
+$('ptFit').onclick=()=>{fit();draw()};
+const zoom=(k,px,py)=>{view.x=px-(px-view.x)*k;view.y=py-(py-view.y)*k;view.s=Math.min(5000,Math.max(0.01,view.s*k))};
+$('zIn').onclick=()=>{zoom(1.5,cv.clientWidth/2,cv.clientHeight/2);draw()};$('zOut').onclick=()=>{zoom(1/1.5,cv.clientWidth/2,cv.clientHeight/2);draw()};
+const ptr=new Map();
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,[e.offsetX,e.offsetY])};
+cv.onpointermove=e=>{if(!ptr.has(e.pointerId))return;const o=ptr.get(e.pointerId),n=[e.offsetX,e.offsetY];
+ if(ptr.size===1){view.x+=n[0]-o[0];view.y+=n[1]-o[1]}
+ else{const q=[...ptr.entries()].find(([k])=>k!==e.pointerId)[1],d0=Math.hypot(o[0]-q[0],o[1]-q[1]),d1=Math.hypot(n[0]-q[0],n[1]-q[1]);if(d0>0)zoom(d1/d0,(n[0]+q[0])/2,(n[1]+q[1])/2)}
+ ptr.set(e.pointerId,n);draw()};
+cv.onpointerup=cv.onpointercancel=e=>ptr.delete(e.pointerId);
+cv.onwheel=e=>{e.preventDefault();zoom(e.deltaY<0?1.2:1/1.2,e.offsetX,e.offsetY);draw()};
+const dl=(blob,name)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+$('png').onclick=()=>cv.toBlob(b=>dl(b,'plot.png'));
+$('csvP').onclick=()=>{const r=[['name','type','lat','lon','east_m','north_m'],...P.map(p=>[p.name,p.t,p.lat,p.lon,p.e.toFixed(4),p.n.toFixed(4)]),[],['from','to','distance_m'],...L.map(([i,j])=>[P[i].name,P[j].name,Math.hypot(P[i].e-P[j].e,P[i].n-P[j].n).toFixed(4)])];dl(new Blob(['\ufeff'+r.map(x=>x.join(',')).join('\n')],{type:'text/csv'}),'plot.csv')};
+function tab(plot){document.querySelectorAll('.map-card').forEach(e=>e.style.display=plot?'none':'');$('plotCard').style.display=plot?'':'none';
+ $('tabMap').className=plot?'secondary':'green';$('tabPlot').className=plot?'green':'secondary';
+ if(plot){size();if(!view.x)fit();lists();draw()}else window.dispatchEvent(new Event('resize'))}
+$('tabMap').onclick=()=>tab(false);$('tabPlot').onclick=()=>tab(true);
+addEventListener('resize',()=>{if($('plotCard').style.display!=='none'){size();draw()}});
+let tg=null,tol=0.5,okN=0,arrived=false,actx=null;
+const fl=m=>m<1?(m*100).toFixed(0)+' cm':m.toFixed(2)+' m';
+function beep(){try{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.4;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.5)}catch(e){}}
+$('stkTol').onchange=()=>{tol=+$('stkTol').value;arrived=false;okN=0};
+$('stkBtn').onclick=()=>{
+ if(tg){tg=null;$('stkBtn').textContent='পথ দেখান শুরু';$('stkBox').style.display='none';draw();return}
+ const t=P[+$('stkSel').value];if(!t)return alert('আগে পয়েন্ট নিন বা ছেদ বিন্দু যোগ করুন।');
+ tg=t;tol=+$('stkTol').value;okN=0;arrived=false;
+ try{actx=actx||new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
+ $('stkBtn').textContent='নেভিগেশন বন্ধ করুন';$('stkBox').style.display='';$('stkBox').textContent='GPS রিডিংয়ের অপেক্ষা…';stake();
+};
+function stake(){
+ if(!tg||!org||!recent.length)return;
+ const m=mean(recent.slice(-3)),q=mpd(org.lat),dn=tg.n-(m.lat-org.lat)*q.n,de=tg.e-(m.lon-org.lon)*q.e,d=Math.hypot(dn,de);
+ const brg=(Math.atan2(de,dn)*180/Math.PI+360)%360,last=recent[recent.length-1],hd=last.heading;
+ const arrow=Number.isFinite(hd)?`<div style="font-size:46px;line-height:1;transform:rotate(${(brg-hd+360)%360}deg)">↑</div>`:'';
+ if(d<=tol)okN++;else okN=0;
+ if(d>2*tol)arrived=false;
+ if(okN>=3&&!arrived){arrived=true;try{navigator.vibrate&&navigator.vibrate([300,100,300,100,600])}catch(e){}beep()}
+ const bg=arrived?'#d7f5e4':d<=3*tol?'#fff1cc':'#eef4fb';
+ const warn=Number.isFinite(last.acc)&&last.acc>tol?`<div style="color:#b42318;font-size:12px;margin-top:6px">⚠ GPS accuracy ${last.acc.toFixed(1)} m, সহনসীমা ${fl(tol)}-এর চেয়ে বেশি। "পৌঁছেছেন" সংকেত নির্ভরযোগ্য নয়।</div>`:'';
+ $('stkBox').style.background=bg;
+ $('stkBox').innerHTML=(arrived?'<div style="font-size:20px;font-weight:800;color:#087e54">✅ ঠিক পজিশানে পৌঁছে গেছেন: '+tg.name+'</div>':'<div style="font-weight:700">'+tg.name+' পর্যন্ত</div>')+arrow+
+  '<div style="font-size:30px;font-weight:800">'+fl(d)+'</div><div>'+(dn>=0?'উত্তরে ':'দক্ষিণে ')+fl(Math.abs(dn))+' • '+(de>=0?'পূর্বে ':'পশ্চিমে ')+fl(Math.abs(de))+'</div><div class="muted">দিক (বেয়ারিং): '+brg.toFixed(0)+'° (উত্তর=০°, পূর্ব=৯০°)</div>'+warn;
+}
+
+const segX=(a,b,c,d)=>{const o=(p,q,r)=>(q.e-p.e)*(r.n-p.n)-(q.n-p.n)*(r.e-p.e);return o(a,b,c)*o(a,b,d)<0&&o(c,d,a)*o(c,d,b)<0};
+function selfX(t){const n=t.length;for(let i=0;i<n;i++)for(let j=i+2;j<n;j++){if(i===0&&j===n-1)continue;if(segX(t[i],t[(i+1)%n],t[j],t[(j+1)%n]))return true}return false}
+function polyCalc(){
+ const t=poly.map(i=>P[i]).filter(Boolean),n=t.length,el=$('polyOut');if(!el)return;
+ if(n<3){el.textContent='ক্ষেত্রফলের জন্য কমপক্ষে ৩টি পয়েন্ট লাগবে। বহুভুজে এখন: '+n+'টি';draw();return}
+ let a=0,per=0;t.forEach((p,k)=>{const q=t[(k+1)%n];a+=p.e*q.n-q.e*p.n;per+=Math.hypot(p.e-q.e,p.n-q.n)});a=Math.abs(a)/2;
+ const sf=a*10.7639,kt=sf/(+$('sqK').value||720),bg=kt/(+$('kB').value||20);
+ el.innerHTML='ক্ষেত্রফল: <b>'+a.toFixed(2)+' বর্গমিটার</b> = '+sf.toFixed(1)+' বর্গফুট<br>= '+(a/40.4686).toFixed(3)+' শতক (ডেসিমেল) = '+kt.toFixed(3)+' কাঠা = '+bg.toFixed(4)+' বিঘা<br>পরিসীমা: '+per.toFixed(2)+' m, পয়েন্ট: '+n+'টি'+(selfX(t)?'<br><b style="color:#b42318">⚠ সীমানা নিজেকে কেটেছে, ক্রম ঠিক করুন।</b>':'')+'<br><span class="muted">GPS-এর ভুল ক্ষেত্রফলে সরাসরি প্রভাব ফেলে। আইনি কাজে অনুমোদিত সার্ভেয়ারের মাপ নিন।</span>';
+ draw();
+}
+$('polyAdd').onclick=()=>{const i=+$('selA').value;if(P[i]&&!poly.includes(i)){poly.push(i);save();polyCalc()}};
+$('polyAll').onclick=()=>{poly=P.map((_,i)=>i);save();polyCalc()};
+$('polyUndo').onclick=()=>{poly.pop();save();polyCalc()};
+$('polyClr').onclick=()=>{poly=[];save();polyCalc()};
+$('sqK').oninput=$('kB').oninput=polyCalc;
+$('kmlB').onclick=()=>{if(!P.length)return;const pm=P.map(p=>`<Placemark><name>${p.name}</name><Point><coordinates>${p.lon},${p.lat},0</coordinates></Point></Placemark>`).join('');
+ const t=poly.map(i=>P[i]).filter(Boolean),pg=t.length>2?`<Placemark><name>বহুভুজ</name><Polygon><outerBoundaryIs><LinearRing><coordinates>${[...t,t[0]].map(p=>p.lon+','+p.lat+',0').join(' ')}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`:'';
+ dl(new Blob(['<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>'+pm+pg+'</Document></kml>'],{type:'application/vnd.google-earth.kml+xml'}),'plot.kml')};
+$('gjB').onclick=()=>{if(!P.length)return;const t=poly.map(i=>P[i]).filter(Boolean),fs=P.map(p=>({type:'Feature',properties:{name:p.name},geometry:{type:'Point',coordinates:[p.lon,p.lat]}}));
+ if(t.length>2)fs.push({type:'Feature',properties:{name:'polygon'},geometry:{type:'Polygon',coordinates:[[...t,t[0]].map(p=>[p.lon,p.lat])]}});
+ dl(new Blob([JSON.stringify({type:'FeatureCollection',features:fs})],{type:'application/geo+json'}),'plot.geojson')};
+lists();
 })();
 </script>
 </body></html>
